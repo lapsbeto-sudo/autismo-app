@@ -288,4 +288,157 @@ router.get('/stats', (req, res) => {
     }
 });
 
+// ===== GESTIÓN DE USUARIOS =====
+
+// Listar todos los usuarios
+router.get('/users', (req, res) => {
+    try {
+        const users = queryDb(`
+            SELECT id, nombre, apellido, email, especialidad, rol, activo, created_at,
+                   (SELECT COUNT(*) FROM patients WHERE user_id = users.id) as total_patientes
+            FROM users 
+            ORDER BY created_at DESC
+        `);
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener usuarios' });
+    }
+});
+
+// Obtener usuario específico
+router.get('/users/:id', [
+    param('id').isInt()
+], (req, res) => {
+    try {
+        const users = queryDb(`
+            SELECT id, nombre, apellido, email, especialidad, rol, activo, created_at
+            FROM users WHERE id = ?
+        `, [req.params.id]);
+        
+        if (users.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+        
+        res.json(users[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener usuario' });
+    }
+});
+
+// Actualizar usuario
+router.put('/users/:id', requireAdmin, [
+    param('id').isInt()
+], (req, res) => {
+    try {
+        const existing = queryDb('SELECT id FROM users WHERE id = ?', [req.params.id]);
+        if (existing.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        // No permitir desactivarse a sí mismo
+        if (parseInt(req.params.id) === req.user.id && req.body.activo === 0) {
+            return res.status(400).json({ error: 'No puedes desactivar tu propia cuenta' });
+        }
+
+        const fields = [];
+        const values = [];
+        const allowedFields = ['nombre', 'apellido', 'email', 'especialidad', 'rol', 'activo'];
+
+        allowedFields.forEach(field => {
+            if (req.body[field] !== undefined) {
+                fields.push(`${field} = ?`);
+                values.push(req.body[field]);
+            }
+        });
+
+        if (fields.length === 0) {
+            return res.status(400).json({ error: 'No hay campos para actualizar' });
+        }
+
+        values.push(req.params.id);
+        runDb(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
+
+        const updated = queryDb(`
+            SELECT id, nombre, apellido, email, especialidad, rol, activo, created_at
+            FROM users WHERE id = ?
+        `, [req.params.id]);
+
+        res.json({
+            message: 'Usuario actualizado exitosamente',
+            user: updated[0]
+        });
+    } catch (error) {
+        if (error.message && error.message.includes('UNIQUE constraint')) {
+            return res.status(400).json({ error: 'El email ya está en uso' });
+        }
+        console.error('Error al actualizar usuario:', error);
+        res.status(500).json({ error: 'Error al actualizar usuario' });
+    }
+});
+
+// Desactivar usuario (soft delete)
+router.delete('/users/:id', requireAdmin, [
+    param('id').isInt()
+], (req, res) => {
+    try {
+        const existing = queryDb('SELECT id FROM users WHERE id = ?', [req.params.id]);
+        if (existing.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        // No permitir desactivarse a sí mismo
+        if (parseInt(req.params.id) === req.user.id) {
+            return res.status(400).json({ error: 'No puedes desactivar tu propia cuenta' });
+        }
+
+        runDb('UPDATE users SET activo = 0 WHERE id = ?', [req.params.id]);
+        res.json({ message: 'Usuario desactivado exitosamente' });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al desactivar usuario' });
+    }
+});
+
+// Reactivar usuario
+router.put('/users/:id/activate', requireAdmin, [
+    param('id').isInt()
+], (req, res) => {
+    try {
+        const existing = queryDb('SELECT id FROM users WHERE id = ?', [req.params.id]);
+        if (existing.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        runDb('UPDATE users SET activo = 1 WHERE id = ?', [req.params.id]);
+        res.json({ message: 'Usuario reactivado exitosamente' });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al reactivar usuario' });
+    }
+});
+
+// Restablecer contraseña
+router.put('/users/:id/reset-password', requireAdmin, [
+    param('id').isInt(),
+    body('password').isLength({ min: 6 }).withMessage('Mínimo 6 caracteres')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+        const existing = queryDb('SELECT id FROM users WHERE id = ?', [req.params.id]);
+        if (existing.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        const bcrypt = require('bcryptjs');
+        const passwordHash = await bcrypt.hash(req.body.password, 10);
+        runDb('UPDATE users SET password_hash = ? WHERE id = ?', [passwordHash, req.params.id]);
+
+        res.json({ message: 'Contraseña restablecida exitosamente' });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al restablecer contraseña' });
+    }
+});
+
 module.exports = router;

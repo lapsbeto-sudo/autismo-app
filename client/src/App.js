@@ -13,6 +13,7 @@ import ReportView from './components/reports/ReportView';
 import ReportEdit from './components/reports/ReportEdit';
 import TestManager from './components/admin/TestManager';
 import ItemManager from './components/admin/ItemManager';
+import UserManager from './components/admin/UserManager';
 import DiagnosticForm from './components/diagnostic/DiagnosticForm';
 import DiagnosticList from './components/diagnostic/DiagnosticList';
 import './App.css';
@@ -78,6 +79,9 @@ function App() {
             } />
             <Route path="/admin" element={
               <PrivateRoute><TestManager /></PrivateRoute>
+            } />
+            <Route path="/admin/users" element={
+              <PrivateRoute><UserManager /></PrivateRoute>
             } />
             <Route path="/admin/tests/:testId/items" element={
               <PrivateRoute><ItemManager /></PrivateRoute>

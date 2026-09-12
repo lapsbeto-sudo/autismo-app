@@ -119,12 +119,17 @@ const TestManager = () => {
             <main className="main-content">
                 <div className="page-header">
                     <h2>Administración de Tests</h2>
-                    <button 
-                        onClick={() => { setShowForm(true); setEditingTest(null); }}
-                        className="btn-primary"
-                    >
-                        + Nuevo Test
-                    </button>
+                    <div className="header-actions">
+                        <Link to="/admin/users" className="btn-secondary">
+                            Gestionar Usuarios
+                        </Link>
+                        <button 
+                            onClick={() => { setShowForm(true); setEditingTest(null); }}
+                            className="btn-primary"
+                        >
+                            + Nuevo Test
+                        </button>
+                    </div>
                 </div>
 
                 {showForm && (
