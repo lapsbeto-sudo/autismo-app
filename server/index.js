@@ -20,6 +20,7 @@ app.use('/api/patients', require('./routes/patients'));
 app.use('/api/tests', require('./routes/tests'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/diagnostic', require('./routes/diagnostic'));
 
 // Ruta de prueba
 app.get('/api/health', (req, res) => {

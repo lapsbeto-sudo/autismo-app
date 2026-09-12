@@ -104,6 +104,9 @@ const PatientProfile = () => {
                         <Link to={`/tests?patient=${id}`} className="btn-primary">
                             Aplicar Test
                         </Link>
+                        <Link to={`/patients/${id}/diagnostic`} className="btn-secondary">
+                            Evaluaciones Diagnósticas
+                        </Link>
                         <Link to={`/patients/${id}/edit`} className="btn-secondary">
                             Editar
                         </Link>

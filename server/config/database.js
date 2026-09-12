@@ -95,6 +95,26 @@ async function initDatabase() {
         FOREIGN KEY (user_id) REFERENCES users(id)
     )`);
 
+    // Evaluaciones diagnósticas (para instrumentos como ADOS-2, ADI-R, etc.)
+    db.run(`CREATE TABLE IF NOT EXISTS diagnostic_evaluations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        patient_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        instrumento TEXT NOT NULL,
+        fecha_evaluacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+        edad_evaluacion TEXT,
+        area_evaluada TEXT,
+        resultado TEXT,
+        nivel_gravedad TEXT CHECK(nivel_gravedad IN ('nivel_1', 'nivel_2', 'nivel_3', 'no_aplica')),
+        observaciones TEXT,
+        recomendaciones TEXT,
+        informe_path TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        modified_at DATETIME,
+        FOREIGN KEY (patient_id) REFERENCES patients(id),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )`);
+
     // Verificar si los tests ya están insertados
     const existingTests = db.exec("SELECT COUNT(*) as count FROM tests");
     const count = existingTests[0]?.values[0][0] || 0;

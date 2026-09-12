@@ -13,6 +13,8 @@ import ReportView from './components/reports/ReportView';
 import ReportEdit from './components/reports/ReportEdit';
 import TestManager from './components/admin/TestManager';
 import ItemManager from './components/admin/ItemManager';
+import DiagnosticForm from './components/diagnostic/DiagnosticForm';
+import DiagnosticList from './components/diagnostic/DiagnosticList';
 import './App.css';
 
 const PrivateRoute = ({ children }) => {
@@ -79,6 +81,15 @@ function App() {
             } />
             <Route path="/admin/tests/:testId/items" element={
               <PrivateRoute><ItemManager /></PrivateRoute>
+            } />
+            <Route path="/patients/:patientId/diagnostic" element={
+              <PrivateRoute><DiagnosticList /></PrivateRoute>
+            } />
+            <Route path="/patients/:patientId/diagnostic/new" element={
+              <PrivateRoute><DiagnosticForm /></PrivateRoute>
+            } />
+            <Route path="/patients/:patientId/diagnostic/:evalId/edit" element={
+              <PrivateRoute><DiagnosticForm /></PrivateRoute>
             } />
             <Route path="/" element={<Navigate to="/dashboard" />} />
           </Routes>
