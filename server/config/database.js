@@ -1,4 +1,5 @@
 const initSqlJs = require('sql.js');
+const bcrypt = require('bcryptjs');
 const path = require('path');
 const fs = require('fs');
 
@@ -279,6 +280,22 @@ async function initDatabase() {
         });
 
         console.log('Tests e ítems iniciales insertados correctamente');
+    }
+
+    // Crear usuario admin predeterminado si no existe ningún admin
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@autismo-app.com';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    
+    const existingAdmins = db.exec("SELECT COUNT(*) as count FROM users WHERE rol = 'admin'");
+    const adminCount = existingAdmins[0]?.values[0][0] || 0;
+    
+    if (adminCount === 0) {
+        const passwordHash = bcrypt.hashSync(adminPassword, 10);
+        db.run(
+            `INSERT INTO users (nombre, apellido, email, password_hash, especialidad, rol) VALUES (?, ?, ?, ?, ?, ?)`,
+            ['Administrador', 'Sistema', adminEmail, passwordHash, 'Administración', 'admin']
+        );
+        console.log(`Usuario admin creado: ${adminEmail}`);
     }
 
     saveDatabase();
