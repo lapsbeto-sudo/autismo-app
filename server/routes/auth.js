@@ -1,11 +1,22 @@
+require('dotenv').config();
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
+const rateLimit = require('express-rate-limit');
 const { getDb } = require('../config/database');
-const { JWT_SECRET, authenticateToken } = require('../middleware/auth');
+const { JWT_SECRET, authenticateToken, addToBlacklist } = require('../middleware/auth');
 
 const router = express.Router();
+
+// Rate limiting para login
+const loginLimiter = rateLimit({
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 60000,
+    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 5,
+    message: { error: 'Demasiados intentos. Intenta de nuevo en 1 minuto.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
 // Helper function to query database
 function queryDb(sql, params = []) {
@@ -47,7 +58,6 @@ router.post('/register', [
     try {
         const { nombre, apellido, email, password, especialidad } = req.body;
 
-        // Verificar si el email ya existe
         const existingUser = queryDb('SELECT id FROM users WHERE email = ?', [email]);
         if (existingUser.length > 0) {
             return res.status(400).json({ error: 'El email ya está registrado' });
@@ -83,8 +93,8 @@ router.post('/register', [
     }
 });
 
-// Login
-router.post('/login', [
+// Login con rate limiting
+router.post('/login', loginLimiter, [
     body('email').isEmail().withMessage('Email válido requerido'),
     body('password').notEmpty().withMessage('Contraseña requerida')
 ], async (req, res) => {
@@ -130,6 +140,20 @@ router.post('/login', [
         console.error('Error en login:', error);
         res.status(500).json({ error: 'Error al iniciar sesión' });
     }
+});
+
+// Logout - revocar token
+router.post('/logout', authenticateToken, (req, res) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    if (token) {
+        // Calcular expiración del token (24h)
+        const expiresAt = Date.now() + (24 * 60 * 60 * 1000);
+        addToBlacklist(token, expiresAt);
+    }
+    
+    res.json({ message: 'Sesión cerrada exitosamente' });
 });
 
 // Obtener perfil del usuario autenticado

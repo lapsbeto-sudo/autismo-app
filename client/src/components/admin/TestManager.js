@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3001/api';
+import API_URL from '../../config';
 
 const TestManager = () => {
     const { user, logout } = useAuth();

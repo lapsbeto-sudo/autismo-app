@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3001/api';
+import API_URL from '../../config';
 
 const INSTRUMENTOS = [
     { value: 'ADOS-2', label: 'ADOS-2 (Escala de Observación para el Diagnóstico del Autismo)', categoria: 'Observación' },
