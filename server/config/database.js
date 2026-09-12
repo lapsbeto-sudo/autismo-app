@@ -18,8 +18,9 @@ async function initDatabase() {
         db = new SQL.Database();
     }
 
-    // Habilitar foreign keys
+    // Habilitar foreign keys y configurar codificación
     db.run('PRAGMA foreign_keys = ON');
+    db.run('PRAGMA encoding = "UTF-8"');
 
     // Crear tablas
     db.run(`CREATE TABLE IF NOT EXISTS users (
