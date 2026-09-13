@@ -1,30 +1,11 @@
 const express = require('express');
 const { body, validationResult, param } = require('express-validator');
-const { getDb } = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { queryDb, runDb } = require('../utils/db');
 
 const router = express.Router();
 
 router.use(authenticateToken);
-
-function queryDb(sql, params = []) {
-    const db = getDb();
-    const stmt = db.prepare(sql);
-    stmt.bind(params);
-    const results = [];
-    while (stmt.step()) {
-        results.push(stmt.getAsObject());
-    }
-    stmt.free();
-    return results;
-}
-
-function runDb(sql, params = []) {
-    const db = getDb();
-    db.run(sql, params);
-    const lastId = db.exec("SELECT last_insert_rowid()")[0]?.values[0][0];
-    return { lastInsertRowid: lastId };
-}
 
 // ===== GESTIÓN DE TESTS =====
 

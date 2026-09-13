@@ -4,8 +4,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
-const { getDb } = require('../config/database');
 const { JWT_SECRET, authenticateToken, addToBlacklist } = require('../middleware/auth');
+const { queryDb, runDb } = require('../utils/db');
 
 const router = express.Router();
 
@@ -17,30 +17,6 @@ const loginLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
 });
-
-// Helper function to query database
-function queryDb(sql, params = []) {
-    const db = getDb();
-    try {
-        const stmt = db.prepare(sql);
-        stmt.bind(params);
-        const results = [];
-        while (stmt.step()) {
-            results.push(stmt.getAsObject());
-        }
-        stmt.free();
-        return results;
-    } catch (error) {
-        throw error;
-    }
-}
-
-function runDb(sql, params = []) {
-    const db = getDb();
-    db.run(sql, params);
-    const lastId = db.exec("SELECT last_insert_rowid()")[0]?.values[0][0];
-    return { lastInsertRowid: lastId };
-}
 
 // Registro de usuario
 router.post('/register', [
